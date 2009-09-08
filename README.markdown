@@ -15,7 +15,6 @@ It also allows to extend the logged information with custom fields.
 
 Add the following to your application_controller.rb:
 
-    require 'request_logger'
     class ApplicationController < ActionController::Base
       log_requests
       ...
@@ -36,7 +35,6 @@ in your migration:
 
 in application_controller.rb:
 
-    require 'request_logger'
     class ApplicationController < ActionController::Base
       log_requests :request_info => :set_my_field
       ...
