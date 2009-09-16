@@ -3,6 +3,10 @@ module RequestLogger
   def log_request
     options = self.class.read_inheritable_attribute(:request_logger_options)
 
+    if condition = options[:if]
+      return unless condition.respond_to?(:call) ? condition.call(self) : send(condition)
+    end
+
     rec = RequestLog.new :session_id => request.session_options[:id],
       :uri        => request.try(:url),
       :remote_ip  => request.try(:remote_ip),
@@ -14,8 +18,8 @@ module RequestLogger
       :params     => respond_to?(:filter_parameters) ? filter_parameters(params).inspect : params.inspect,
       :status     => response.headers["Status"]
 
-    if options[:request_info]
-      self.send(options[:request_info], rec)
+    if callback = options[:callback]
+      callback.respond_to?(:call) ? callback.call(self, rec) : send(callback, rec)
     end
 
     rec.save!
@@ -28,7 +32,11 @@ end
 class ActionController::Base
   def self.log_requests(opts = {})
     include RequestLogger
-    after_filter :log_request, :only => opts[:only], :except => opts[:except]
-    write_inheritable_hash :request_logger_options, :request_info => opts[:request_info]
+
+    write_inheritable_attribute :request_logger_options, :callback => opts.delete(:callback), :if => opts.delete(:if)
+
+    opts.assert_valid_keys(:only, :except)
+    skip_after_filter :log_request
+    after_filter :log_request, opts
   end
 end

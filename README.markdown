@@ -22,24 +22,59 @@ Add the following to your application_controller.rb:
 
 ## Customization
 
-You can add your own fields to the request_logs table and provide a controller method to add custom
+### Guards
+
+You can use :only, :except, :if conditions when calling the log_requests. :if accepts a method name or a proc
+which will be called with controller as the only argument
+
+    class ApplicationController < ActionController::Base
+      log_requests :only => :index, :if => proc {|controller| controller.params[:format] == "xml"}
+      ...
+    end
+
+    class ApplicationController < ActionController::Base
+      log_requests :except => [:edit, :new], :if => :api_request?
+      ...
+    protected
+      def api_request?
+        ...
+      end
+    end
+
+You can completely disable the filter in on of the controllers by calling skip_after_filter:
+
+    class BoringController
+      skip_after_filter :log_request
+      ...
+    end
+
+### Extra logging fields
+
+You can also add your own fields to the request_logs table and provide a controller method (or proc) to add custom
 information to the created request_log record:
 
 #### in your migration:
 
     class MoreLoggerFields < ActiveRecord::Migration
       def self.up
-        add_column :request_logs, :my_field, :integer
+        add_column :request_logs, :format, :string, :limit => 8
       end
       ...
 
 #### in application_controller.rb:
 
     class ApplicationController < ActionController::Base
-      log_requests :request_info => :set_my_field
+      log_requests :callback => :set_my_field
       ...
     protected
       def set_my_field(record)
-        record.my_field = ...
+        record.format = params[:format]
       end
+    end
+
+OR
+
+    class ApplicationController < ActionController::Base
+      log_requests :callback => proc {|controller, record| record.format = controller.params[:format] }
+      ...
     end
