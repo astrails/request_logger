@@ -16,7 +16,8 @@ module RequestLogger
       :pid        => $$,
       :referer    => request.referer,
       :params     => respond_to?(:filter_parameters) ? filter_parameters(params).inspect : params.inspect,
-      :status     => response.headers["Status"]
+      :status     => response.headers["Status"],
+      :format     => request.format.to_sym.to_s
 
     if callback = options[:callback]
       callback.respond_to?(:call) ? callback.call(self, rec) : send(callback, rec)

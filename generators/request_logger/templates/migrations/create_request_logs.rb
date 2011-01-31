@@ -11,6 +11,7 @@ class CreateRequestLogs < ActiveRecord::Migration
       t.string  :referer
       t.text    :params
       t.string  :status
+      t.string  :format, :limit => 16, :default => "html"
 
       t.timestamps
     end
